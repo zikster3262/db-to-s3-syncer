@@ -10,10 +10,10 @@ import (
 
 func SetS3Config() *s3.Client {
 
-	minioURL := os.Getenv("MINIO_URL")
+	minioURL := os.Getenv("S3_URL")
 	region := os.Getenv("AWS_REGION")
-	user := os.Getenv("MINIO_ACCESS_KEY")
-	pass := os.Getenv("MINIO_SECRET_KEY")
+	user := os.Getenv("AWS_ACCESS_KEY")
+	pass := os.Getenv("AWS_SECRET_KEY")
 
 	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 		return aws.Endpoint{
