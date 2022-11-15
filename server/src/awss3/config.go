@@ -11,7 +11,7 @@ import (
 func SetS3Config() *s3.Client {
 
 	minioURL := os.Getenv("MINIO_URL")
-	region := "us-east-1"
+	region := os.Getenv("AWS_REGION")
 	user := os.Getenv("MINIO_ACCESS_KEY")
 	pass := os.Getenv("MINIO_SECRET_KEY")
 
