@@ -41,7 +41,7 @@ func Initialize() error {
 	if err != nil {
 		logrus.Error(err)
 	}
-	_ = awss3.CreateBucket(s3Client)
+	_ = awss3.CreateBucket(s3Client, "requests")
 
 	runners := []runner.Runner{
 		runner.NewSignal(os.Interrupt, syscall.SIGTERM),
