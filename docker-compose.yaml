@@ -45,7 +45,18 @@ services:
     - 9000:9000
     - 9001:9001
     volumes:
-    - ./storage/minio:/data
+    - ./temp/storage/minio:/data
+  
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./temp/rabbitmq/data:/var/lib/rabbitmq/
+      - ./temp/rabbitmq/log/rabbitmq/log/:/var/log/rabbitmq
+
 
     
   
