@@ -1,8 +1,7 @@
 package db
 
 import (
-	"concurrency/src/models"
-	"log"
+	"concurrency/src/utils"
 	"os"
 	"sync"
 
@@ -26,13 +25,11 @@ func OpenSQLx() *sqlx.DB {
 
 		SQLXConnection, err = sqlx.Connect("mysql", dsn)
 		if err != nil {
-			log.Fatal(err)
+			utils.FailOnError(err, err.Error())
 		}
 	})
 
+	utils.LogWithInfo("connected to database", "db")
+
 	return SQLXConnection
-}
-
-func (s *SQLxProvider) Insert(r models.Request) {
-
 }

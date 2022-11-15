@@ -28,11 +28,13 @@ services:
       AWS_ACCESS_KEY: testtest
       AWS_SECRET_KEY: testtest
       AWS_REGION: us-east-1
+      RABBITMQ_ADDRESS: amqp://guest:guest@rabbitmq:5672/
     ports:
     - 8080:8080
     depends_on:
       - mysql
       - minio
+      - rabbitmq
       
   minio:
     container_name: minio
@@ -49,7 +51,7 @@ services:
   
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: 'rabbitmq'
+    container_name: rabbitmq
     ports:
       - 5672:5672
       - 15672:15672

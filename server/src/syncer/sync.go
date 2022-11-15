@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"concurrency/src/db"
 	"concurrency/src/models"
+	"concurrency/src/utils"
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
+	"github.com/streadway/amqp"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -23,12 +24,16 @@ var (
 type Syncer struct {
 	s3w *s3.Client
 	db  *sqlx.DB
+	rmq *amqp.Channel
+	q   amqp.Queue
 }
 
-func NewSyncer(db *sqlx.DB, s3cliet *s3.Client) Syncer {
+func NewSyncer(db *sqlx.DB, s3cliet *s3.Client, rmq *amqp.Channel, q amqp.Queue) Syncer {
 	return Syncer{
 		s3w: s3cliet,
 		db:  db,
+		rmq: rmq,
+		q:   q,
 	}
 }
 
@@ -40,7 +45,7 @@ func (s *Syncer) Sync(ctx context.Context) error {
 		log.Info().Msg("Running Syncer.......")
 		requests, err := db.GetAllRequest(s.db)
 		if err != nil {
-			log.Error().Msg("cant select request data")
+			utils.FailOnError(err, "cant select request data")
 		}
 
 		for i := 0; i < len(requests); i++ {
@@ -72,7 +77,7 @@ func (s *Syncer) GetS3Object(uuid string) bool {
 	})
 
 	if err != nil {
-		log.Error().Msg("couldn't list bucket contents")
+		utils.FailOnError(err, "couldn't list bucket contents")
 	}
 
 	for _, object := range listObjsResponse.Contents {
@@ -86,23 +91,17 @@ func (s *Syncer) GetS3Object(uuid string) bool {
 }
 
 func (s *Syncer) PutS3Object(m models.DbRequest) error {
-	var bt []byte
-	var err error
-	bt, err = json.Marshal(m)
-	if err != nil {
-		log.Error().Msg("couldn't unmarshall the request")
-	}
-
+	bt := utils.StructToJson(m)
 	body := bytes.NewReader(bt)
 
-	_, err = s.s3w.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err := s.s3w.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String("requests"),
 		Key:    aws.String(m.Uuid),
 		Body:   body,
 	})
 
 	if err != nil {
-		panic("Couldn't upload file: " + err.Error())
+		utils.FailOnError(err, "Couldn't upload file: "+err.Error())
 	}
 	return err
 }
