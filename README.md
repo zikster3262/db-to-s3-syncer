@@ -1,1 +1,7 @@
-# db-to-s3-syncer
+# Syncer
+
+Components
+- RabbitMQ
+- MYSQL
+- Golang API
+- Gin
