@@ -4,8 +4,10 @@ import (
 	"concurrency/src/api"
 	"concurrency/src/awss3"
 	"concurrency/src/db"
+	"concurrency/src/rabbitmq"
 	"concurrency/src/runner"
 	"concurrency/src/syncer"
+	"concurrency/src/utils"
 	"context"
 	"net/http"
 	"os"
@@ -14,14 +16,13 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 )
 
 var (
-	router   *runner.ServerRunner
 	sqlxDB   *sqlx.DB
 	s3Client *s3.Client
 	sy       syncer.Syncer
+	queue    = "go-rabbit"
 )
 
 func main() {
@@ -34,12 +35,24 @@ func Initialize() error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	rabbitCh, err := rabbitmq.ConnectToRabbit()
+	utils.FailOnError(err, "cant connect to RabbitMQ")
+	defer rabbitCh.Close()
+
+	rmq := rabbitmq.CreateRabbitMQClient(rabbitCh, queue)
+
+	q, err := rmq.CreateRabbitMQueue()
+	utils.FailOnError(err, "cant create RabbitMQ queue")
+
 	s3Client = awss3.SetS3Config()
+
 	sqlxDB = db.OpenSQLx()
-	sy = syncer.NewSyncer(sqlxDB, s3Client)
+
+	sy = syncer.NewSyncer(sqlxDB, s3Client, rmq, q)
+
 	router, err := NewServer(ctx)
 	if err != nil {
-		logrus.Error(err)
+		utils.FailOnError(err, err.Error())
 	}
 	_ = awss3.CreateBucket(s3Client, "requests")
 

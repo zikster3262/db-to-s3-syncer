@@ -2,6 +2,7 @@ package routes
 
 import (
 	"concurrency/src/models"
+	"concurrency/src/utils"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,14 +32,14 @@ func createRequest(c *gin.Context) {
 	var r models.Request
 	err := bindJson(c, &r)
 	if err != nil {
-		fmt.Println(err)
+		utils.FailOnError(err, err.Error())
 	}
 
 	sql := fmt.Sprintf("SELECT * FROM request WHERE uuid = \"%v\"", r.Uuid)
 	var req models.SQLRequest
 	err = db.Get(&req, sql)
 	if err == nil {
-		log.Info("Internal server errror.")
+		utils.FailOnError(err, "internal server error")
 	}
 
 	if req.Uuid == r.Uuid {
@@ -46,7 +47,7 @@ func createRequest(c *gin.Context) {
 	} else {
 		_, err = db.NamedExec(`INSERT INTO request (uuid, time) VALUES (:uuid, :time)`, r)
 		if err != nil {
-			log.Error("Record was not created")
+			utils.FailOnError(err, "record not created")
 		}
 	}
 

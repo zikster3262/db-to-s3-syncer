@@ -1,6 +1,7 @@
 package awss3
 
 import (
+	"concurrency/src/utils"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -29,6 +30,8 @@ func SetS3Config() *s3.Client {
 		Credentials:                 credentials.NewStaticCredentialsProvider(user, pass, ""),
 		EndpointResolverWithOptions: resolver,
 	}
+
+	utils.LogWithInfo("connected to aws bucket", "aws-s3")
 
 	return s3.NewFromConfig(cfg)
 

@@ -1,8 +1,8 @@
 package runner
 
 import (
+	"concurrency/src/utils"
 	"context"
-	"log"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -17,7 +17,7 @@ func RunParallel(c context.Context, runners ...Runner) error {
 		r := r
 		g.Go(func() (err error) {
 			if err = r.Run(newCtx); err != nil && err != context.Canceled {
-				log.Fatal(err)
+				utils.FailOnError(err, err.Error())
 			}
 			return err
 		})
