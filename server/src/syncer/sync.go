@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"concurrency/src/db"
 	"concurrency/src/models"
+	"concurrency/src/rabbitmq"
 	"concurrency/src/utils"
 	"context"
 	"errors"
@@ -24,11 +25,11 @@ var (
 type Syncer struct {
 	s3w *s3.Client
 	db  *sqlx.DB
-	rmq *amqp.Channel
+	rmq *rabbitmq.RabbitMQClient
 	q   amqp.Queue
 }
 
-func NewSyncer(db *sqlx.DB, s3cliet *s3.Client, rmq *amqp.Channel, q amqp.Queue) Syncer {
+func NewSyncer(db *sqlx.DB, s3cliet *s3.Client, rmq *rabbitmq.RabbitMQClient, q amqp.Queue) Syncer {
 	return Syncer{
 		s3w: s3cliet,
 		db:  db,
@@ -52,7 +53,9 @@ func (s *Syncer) Sync(ctx context.Context) error {
 			ex := s.GetS3Object(requests[i].Uuid)
 			if !ex {
 				s.PutS3Object(requests[i])
+				s.rmq.PublishMessage(s.q, utils.StructToJson(requests[i]))
 			}
+
 		}
 
 		select {

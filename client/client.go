@@ -23,7 +23,7 @@ func main() {
 
 	ctx := context.Background()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ {
 		go generateRequest(ch)
 	}
 

@@ -34,15 +34,22 @@ func Initialize() error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	rabbitCh, err := rabbitmq.ConnectToRabbit()
 	utils.FailOnError(err, "cant connect to RabbitMQ")
+	defer rabbitCh.Close()
 
-	q, err := rabbitmq.CreateRabbitMQueue(rabbitCh, queue)
+	rmq := rabbitmq.CreateRabbitMQClient(rabbitCh, queue)
+
+	q, err := rmq.CreateRabbitMQueue()
 	utils.FailOnError(err, "cant create RabbitMQ queue")
 
 	s3Client = awss3.SetS3Config()
+
 	sqlxDB = db.OpenSQLx()
-	sy = syncer.NewSyncer(sqlxDB, s3Client, rabbitCh, q)
+
+	sy = syncer.NewSyncer(sqlxDB, s3Client, rmq, q)
+
 	router, err := NewServer(ctx)
 	if err != nil {
 		utils.FailOnError(err, err.Error())
